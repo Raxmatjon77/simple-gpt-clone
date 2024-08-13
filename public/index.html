@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat with GPT</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      #chat-container {
+        width: 50%;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      #chat-history {
+        max-height: 400px;
+        overflow-y: auto;
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #fafafa;
+      }
+
+      .message {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 10px;
+        line-height: 1.5;
+      }
+
+      .message.user {
+        background-color: #d4f3d4;
+        text-align: right;
+      }
+
+      .message.gpt {
+        background-color: #f0f0f0;
+        text-align: left;
+      }
+
+      .timestamp {
+        font-size: 0.8em;
+        color: #777;
+        margin-top: 5px;
+        display: block;
+      }
+
+      #chat-input-container {
+        display: flex;
+      }
+
+      #message-input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-right: 10px;
+      }
+
+      #send-btn {
+        padding: 10px 20px;
+        border: none;
+        background-color: #28a745;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      #send-btn:hover {
+        background-color: #218838;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="chat-container">
+      <h2>Chat with GPT with Raxmatjon</h2>
+      <div id="chat-history"></div>
+      <div id="chat-input-container">
+        <input
+          type="text"
+          id="message-input"
+          placeholder="Type your message..."
+        />
+        <button id="send-btn">Send</button>
+      </div>
+    </div>
+
+    <script>
+     const chatHistory = document.getElementById("chat-history");
+        const messageInput = document.getElementById("message-input");
+        const sendBtn = document.getElementById("send-btn");
+
+ function loadChatHistory() {
+          fetch("/history")
+            .then((response) => response.json())
+            .then((data) => {
+              chatHistory.innerHTML = "";
+              data.history.reverse().forEach((item) => {
+                const userMessageElem = document.createElement("div");
+                userMessageElem.classList.add("message", "user");
+                userMessageElem.textContent = item.user_message;
+                const userTimestamp = document.createElement("span");
+                userTimestamp.classList.add("timestamp");
+                userTimestamp.textContent = new Date(
+                  item.timestamp
+                ).toLocaleString();
+                userMessageElem.appendChild(userTimestamp);
+                chatHistory.appendChild(userMessageElem);
+
+                const gptMessageElem = document.createElement("div");
+                gptMessageElem.classList.add("message", "gpt");
+                gptMessageElem.textContent = item.gpt_response;
+                const gptTimestamp = document.createElement("span");
+                gptTimestamp.classList.add("timestamp");
+                gptTimestamp.textContent = new Date(
+                  item.timestamp
+                ).toLocaleString();
+                gptMessageElem.appendChild(gptTimestamp);
+                chatHistory.appendChild(gptMessageElem);
+              });
+
+              // Прокрутка к последнему сообщению
+              chatHistory.scrollTop = chatHistory.scrollHeight;
+            })
+            .catch((error) =>
+              console.error("Error fetching chat history:", error)
+            );
+        }
+
+      document
+        .querySelector("#chat-container")
+        .addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            // const chatHistory = document.getElementById("chat-history");
+            // const messageInput = document.getElementById("message-input");
+            // const sendBtn = document.getElementById("send-btn");
+            const message = messageInput.value.trim();
+            messageInput.value = "";
+            if (message) {
+              fetch("/chat", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ message: message }),
+              })
+                .then((response) => response.json())
+                .then((data) => {
+                  loadChatHistory();
+                  messageInput.value = "";
+                })
+                .catch((error) =>
+                  console.error("Error sending message:", error)
+                );
+            }
+
+            return false;
+          }
+        });
+      document.addEventListener("DOMContentLoaded", function () {
+      
+
+       
+        sendBtn.addEventListener("click", function () {
+          const message = messageInput.value.trim();
+          messageInput.value = "";
+          if (message) {
+            fetch("/chat", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ message: message }),
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                loadChatHistory();
+                messageInput.value = "";
+              })
+              .catch((error) => console.error("Error sending message:", error));
+          }
+        });
+
+        // Загружаем историю чата при загрузке страницы
+        loadChatHistory();
+      });
+    </script>
+  </body>
+</html>
